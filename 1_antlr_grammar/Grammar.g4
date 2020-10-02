@@ -16,12 +16,12 @@ arguments
 	: '(' (type identifier ','?)* ')';
 
 /* regra que descreve um statement dentro de chaves (‘{‘ e ‘}’). */
-body 
+body
 	: '{' statement* '}';
 
 /* regra que conterá diferentes tipos de statements. */
 statement
-    : if_statement
+  : if_statement
 	| for_loop
 	| expression SEMICOLON
 	| variable_definition SEMICOLON
@@ -32,13 +32,13 @@ statement
 /*  regra que define o formato de um ‘if’. */
 if_statement
 	: 'if' expression body else_statement*
-    | 'if' expression statement
+  | 'if' expression statement
 	;
 
 /* regra que define o formato de um ‘else’. */
 else_statement
 	: 'else' body
-    | 'else' if_statement
+  | 'else' if_statement
 	;
 
 /*  regra que define o formato do ‘for’. */
@@ -48,7 +48,7 @@ for_loop
 
 /* regra que define o formato do primeiro parâmetro do ‘for’, o inicializador. */
 for_initializer
-	: variable_assignment 
+	: variable_assignment
     | variable_definition
 	;
 
@@ -74,7 +74,7 @@ variable_assignment
 	| identifier ('+='|'-=') expression
 	| identifier ('/='|'*=') expression
 	| identifier ('++'|'--')
-	| ('++'|'--') identifier 
+	| ('++'|'--') identifier
 	;
 
 /* regra que define os diferentes tipos de expressões presentes na linguagem (aritmética, chamada de função, etc). */
@@ -83,10 +83,10 @@ expression
 	| integer
 	| floating
 	| function_call
-    | array
+  | array
 	| identifier
-    | expression ('<'|'>'|'<='|'>=') expression
-    | expression ('!='|'==') expression
+  | expression ('<'|'>'|'<='|'>=') expression
+  | expression ('!='|'==') expression
 	| expression ('/'|'*') expression
 	| expression ('+'|'-') expression
 	| ('-') expression
@@ -94,13 +94,13 @@ expression
 	;
 /* regra que define o formato do array na linguagem. */
 array
-    : identifier '[' expression ']' 
-    ;
+  : identifier '[' expression ']'
+  ;
 
 /* regra que define um array literal. Ex.: {1, 2, 3}. */
 array_literal
-    : '{' (expression ','?)* '}' 
-    ;
+  : '{' (expression ','?)* '}'
+  ;
 
 /*  regra que define o formato da chamada de uma função. */
 function_call: identifier '(' (expression ','?)* ')';
@@ -130,7 +130,7 @@ IDENTIFIER : ([a-zA-Z_]+[0-9]*);
 MANUAL
 
 caracteres especiais para expressões regulares {
-	'xyz'   :  os caracteres rodeados por ' ' são interpretados literalmente 
+	'xyz'   :  os caracteres rodeados por ' ' são interpretados literalmente
 	\x		:  altera a interpretação do caracter x, se ele tiver outra (\t: tab, \(: o caracter que abre parênteses)
 	a(bc)d  :  destaca a subexpressão bc
 	x | y   :  aceita a subexpressão x ou y
