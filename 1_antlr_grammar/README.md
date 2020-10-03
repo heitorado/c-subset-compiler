@@ -30,6 +30,6 @@ It should also support line comments with '//' and block comments with '/* */'.
 ## Running
 ```
 make < sample_codes/00.c
-make < sample_codes/01m.c
+make < sample_codes/01.c
 make < sample_codes/02.c
 ```
