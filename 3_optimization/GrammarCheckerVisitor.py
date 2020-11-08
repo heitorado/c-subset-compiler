@@ -149,13 +149,33 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
         # ATUALIZAR O VALOR DA VARIAVEL OU DO VALOR NAQUELA POSICAO DO ARRAY POR MEIO DE CTE_VALUE
         op = ctx.OP.text
         if op == '++' or op == '--':
-            pass
+          if cte_value is None:
+            cte_value = None
+          elif op == '++':
+            cte_value = eval("{} {} {}".format(cte_value, '+', 1))
+          elif op == '--':
+            cte_value = eval("{} {} {}".format(cte_value, '-', 1))
         else:
             expr_type, expr_cte_value = self.visit(ctx.expression())
             if expr_type == Type.VOID:
                 print("ERROR: trying to assign void expression to variable '" + name + "' in line " + str(token.line) + " and column " + str(token.column))
             elif expr_type == Type.FLOAT and tyype == Type.INT:
                 print("WARNING: possible loss of information assigning float expression to int variable '" + name + "' in line " + str(token.line) + " and column " + str(token.column))
+
+            if op == '=':
+              cte_value = expr_cte_value
+            elif expr_cte_value == None or cte_value == None:
+              cte_value = None
+            elif op == '/=':
+              cte_value = eval("{} {} {}".format(cte_value, '/', expr_cte_value))
+            elif op == '*=':
+              cte_value = eval("{} {} {}".format(cte_value, '*', expr_cte_value))
+            elif op == '+=':
+              cte_value = eval("{} {} {}".format(cte_value, '+', expr_cte_value))
+            elif op == '-=':
+              cte_value = eval("{} {} {}".format(cte_value, '-', expr_cte_value))
+            else:
+              cte_value = eval("{} {} {}".format(cte_value, op, expr_cte_value))
 
         if ctx.identifier() != None:
             self.ids_defined[name] = tyype, -1, cte_value
@@ -169,17 +189,21 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
     # Visit a parse tree produced by GrammarParser#expression.
     def visitExpression(self, ctx:GrammarParser.ExpressionContext):
         tyype = Type.VOID
+        token = None
         cte_value = None # RETORNAR OS VALORES DAS CONTANTES, OU NONE SE NAO FOR CONSTANTE
         if len(ctx.expression()) == 0:
 
             if ctx.integer() != None:
                 tyype = Type.INT
+                cte_value = int(ctx.integer().getText())
 
             elif ctx.floating() != None:
                 tyype = Type.FLOAT
+                cte_value = float(ctx.floating().getText())
 
             elif ctx.string() != None:
                 tyype = Type.STRING
+                cte_value = str(ctx.string().getText())
 
             elif ctx.identifier() != None:
                 name = ctx.identifier().getText()
@@ -198,6 +222,13 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
                     print("ERROR: undefined array '" + name + "' in line " + str(token.line) + " and column " + str(token.column))
                 array_index = self.visit(ctx.array())
 
+
+                if array_index != None and array_length != None:
+                  if (array_index > array_length - 1):
+                    token = ctx.array().identifier().IDENTIFIER().getPayload()
+                    print("ERROR: array index out of bounds '" + name + "' in line " + str(token.line) + " and column " + str(token.column))
+                  elif cte_values_array is not None:
+                    cte_value = cte_values_array[array_index]
             elif ctx.function_call() != None:
                 tyype, cte_value = self.visit(ctx.function_call())
 
@@ -207,6 +238,7 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
                 text = ctx.OP.text
                 token = ctx.OP
                 tyype, cte_value = self.visit(ctx.expression(0))
+                cte_value = eval("{}{}".format(text, cte_value))
                 if tyype == Type.VOID:
                     print("ERROR: unary operator '" + text + "' used on type void in line " + str(token.line) + " and column " + str(token.column))
 
@@ -230,7 +262,17 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
             else:
                 tyype = Type.INT
 
+            if left_cte_value != None and right_cte_value != None and left != Type.STRING and right != Type.STRING:
+                #print("{} {} {}".format(left_cte_value, text, right_cte_value))
+                cte_value = eval("{} {} {}".format(left_cte_value, text, right_cte_value))
+                if isinstance(cte_value, bool):
+                  cte_value = int(cte_value)
+
+        #if token is not None:
+        #  print(str(tyype) + ": " + str(cte_value) + ' - at: ' + str(token.line))
+        #else:
         print(str(tyype) + ": " + str(cte_value))
+
         return tyype, cte_value
 
 
