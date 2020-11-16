@@ -76,6 +76,8 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
         if ctx.RETURN() != None:
             token = ctx.RETURN().getPayload()
             tyype, cte_value, ir_register = self.visit(ctx.expression())
+            #print("ir_reg::" + str(ir_register))
+            #print("ids_defined:: " + str(self.ids_defined))
             function_type, params, cte_value_WHAT_THE_F_CK_THIS_IS_DOING_HERE, ir_register_WHAT_THE_F_CK_THIS_IS_DOING_HERE = self.ids_defined[self.inside_what_function]
 
             #print(self.ids_defined[self.inside_what_function])
@@ -338,10 +340,18 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
                     elif text == '-':
                         cte_value = left_cte_value - right_cte_value
                 else:
+                    left_something = (str(left_cte_value) if left_cte_value is not None else "%{}".format(left_ir_register))
+                    right_something = (str(right_cte_value) if right_cte_value is not None else "%{}".format(right_ir_register))
+                    ir_register = self.next_ir_register
+                    self.next_ir_register += 1
                     if text == '*':
-                      ir_register = self.next_ir_register
-                      self.next_ir_register += 1
-                      printf("  %%%s = mul nsw %s %%%s, %%%s\n", ir_register, llvm_type(tyype), str(left_ir_register), str(right_ir_register))
+                      printf("  %%%s = mul nsw %s %s, %s\n", ir_register, llvm_type(tyype), left_something, right_something)
+                    elif text == '/':
+                      printf("  %%%s = sdiv %s %s, %s\n", ir_register, llvm_type(tyype), left_something, right_something)
+                    elif text == '+':
+                      printf("  %%%s = add nsw %s %s, %s\n", ir_register, llvm_type(tyype), left_something, right_something)
+                    elif text == '-':
+                      printf("  %%%s = sub nsw %s %s, %s\n", ir_register, llvm_type(tyype), left_something, right_something)
                     cte_value = None
             else:
                 tyype = Type.INT
