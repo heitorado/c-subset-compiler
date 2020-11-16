@@ -60,6 +60,8 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
         self.inside_what_function = name
         self.next_ir_register = len(params) + 1
         self.visit(ctx.body())
+        if llvm_type(tyype) == "void":
+          printf("  ret void\n")
         printf("}\n\n")
         return
 
@@ -74,7 +76,14 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
         if ctx.RETURN() != None:
             token = ctx.RETURN().getPayload()
             tyype, cte_value, ir_register = self.visit(ctx.expression())
-            function_type, params, cte_value, ir_register = self.ids_defined[self.inside_what_function]
+            function_type, params, cte_value_WHAT_THE_F_CK_THIS_IS_DOING_HERE, ir_register_WHAT_THE_F_CK_THIS_IS_DOING_HERE = self.ids_defined[self.inside_what_function]
+
+            #print(self.ids_defined[self.inside_what_function])
+            if cte_value is None:
+              printf("  ret %s %%%s\n", llvm_type(tyype), str(ir_register))
+            else:
+              printf("  ret %s %s\n", llvm_type(tyype), str(cte_value))
+
             if function_type == Type.INT and tyype == Type.FLOAT:
                 err("WARNING: possible loss of information returning float expression from int function '" + self.inside_what_function + "' in line " + str(token.line) + " and column " + str(token.column) + "\n")
             elif function_type == Type.VOID and tyype != Type.VOID:
@@ -329,6 +338,10 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
                     elif text == '-':
                         cte_value = left_cte_value - right_cte_value
                 else:
+                    if text == '*':
+                      ir_register = self.next_ir_register
+                      self.next_ir_register += 1
+                      printf("  %%%s = mul nsw %s %%%s, %%%s\n", ir_register, llvm_type(tyype), str(left_ir_register), str(right_ir_register))
                     cte_value = None
             else:
                 tyype = Type.INT
@@ -367,6 +380,7 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
                     cte_value = None
 
         #err(tyype + ": " + str(cte_value) + ", " + str(ir_register) + "\n")
+        #print("{} {} {}".format(tyype, cte_value, ir_register))
         return tyype, cte_value, ir_register
 
 
@@ -406,14 +420,45 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
             err("ERROR: undefined function '" + name + "' in line " + str(token.line) + " and column " + str(token.column) + "\n")
             exit(-1)
 
+        if llvm_type(tyype) == "void":
+          printf("  call void @%s(", name)
+        else:
+          ir_register = self.next_ir_register
+          self.next_ir_register += 1
+          printf("  %%%s = call %s @%s(", str(ir_register), llvm_type(tyype), name)
+
         for i in range(len(ctx.expression())):
             arg_type, arg_cte_value, arg_ir_register = self.visit(ctx.expression(i))
+
             if i < len(args):
+                if arg_cte_value is not None:
+                  print_format = "%s %d, "
+                  if i == (len(ctx.expression())-1):
+                    print_format = "%s %d"
+
+                  printf(print_format, llvm_type(arg_type), arg_cte_value)
+                else:
+                  print_format = "%s %%%s, "
+                  if i == (len(ctx.expression())-1):
+                    print_format = "%s %%%s"
+                  printf(print_format, llvm_type(arg_type), str(arg_ir_register))
+
                 if arg_type == Type.VOID:
                     err("ERROR: void expression passed as parameter " + str(i) + " of function '" + name + "' in line " + str(token.line) + " and column " + str(token.column) + "\n")
                     exit(-1)
                 elif arg_type == Type.FLOAT and args[i] == Type.INT:
                     err("WARNING: possible loss of information converting float expression to int expression in parameter " + str(i) + " of function '" + name + "' in line " + str(token.line) + " and column " + str(token.column) + "\n")
+
+        printf(")\n")
+        # if llvm_type(tyype) == "void":
+        #   if args == []:
+        #     f_args = ''
+        #   printf("  call void @%s(%s)\n", name, f_args)
+        # else:
+        #   ir_register = self.next_ir_register
+        #   self.next_ir_register += 1
+        #   printf("  %%%s = call %s @%s(%s)\n", str(ir_register), llvm_type(tyype), name, args)
+
         return tyype, cte_value, ir_register
 
 
