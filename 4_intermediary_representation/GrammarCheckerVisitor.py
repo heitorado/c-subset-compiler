@@ -322,6 +322,7 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
 
         elif len(ctx.expression()) == 1:
 
+
             if ctx.OP != None: #unary operators
                 text = ctx.OP.text
                 token = ctx.OP
@@ -449,6 +450,7 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
     def visitFunction_call(self, ctx:GrammarParser.Function_callContext):
         name = ctx.identifier().getText()
         token = ctx.identifier().IDENTIFIER().getPayload()
+      
         try:
             tyype, args, cte_value, ir_register = self.ids_defined[name]
             if len(args) != len(ctx.expression()):
@@ -459,33 +461,37 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
             exit(-1)
 
         if llvm_type(tyype) == "void":
-          printf("  call void @%s(", name)
-        else:
-          ir_register = self.next_ir_register
-          self.next_ir_register += 1
-          printf("  %%%s = call %s @%s(", str(ir_register), llvm_type(tyype), name)
+            printf("  call void @%s(", name)
+        else: #//se tem retorno
 
-        for i in range(len(ctx.expression())):
-            arg_type, arg_cte_value, arg_ir_register = self.visit(ctx.expression(i))
+            for i in range(len(ctx.expression())):
 
-            if i < len(args):
-                if arg_cte_value is not None:
-                  print_format = "%s %d, "
-                  if i == (len(ctx.expression())-1):
-                    print_format = "%s %d"
+                arg_type, arg_cte_value, arg_ir_register = self.visit(ctx.expression(i)) #Visita argumentos primeiro
+                
+                ir_register = self.next_ir_register #DEPOIS -> PRINTA FUNCAO APOS VISTAR OS ARGUMENTOS
+                self.next_ir_register += 1
 
-                  printf(print_format, llvm_type(arg_type), arg_cte_value)
-                else:
-                  print_format = "%s %%%s, "
-                  if i == (len(ctx.expression())-1):
-                    print_format = "%s %%%s"
-                  printf(print_format, llvm_type(arg_type), str(arg_ir_register))
+                if(i == 0): #so quero imprimir aassinatura para todos os argumentos 1 vez, a primeira
+                    printf("  %%%s = call %s @%s(", str(ir_register), llvm_type(tyype), name)
 
-                if arg_type == Type.VOID:
-                    err("ERROR: void expression passed as parameter " + str(i) + " of function '" + name + "' in line " + str(token.line) + " and column " + str(token.column) + "\n")
-                    exit(-1)
-                elif arg_type == Type.FLOAT and args[i] == Type.INT:
-                    err("WARNING: possible loss of information converting float expression to int expression in parameter " + str(i) + " of function '" + name + "' in line " + str(token.line) + " and column " + str(token.column) + "\n")
+                if i < len(args):
+                    if arg_cte_value is not None:
+                        print_format = "%s %d, "
+                        if i == (len(ctx.expression())-1):
+                            print_format = "%s %d"
+
+                        printf(print_format, llvm_type(arg_type), arg_cte_value)
+                    else:
+                        print_format = "%s %%%s, "
+                        if i == (len(ctx.expression())-1):
+                            print_format = "%s %%%s"
+                        printf(print_format, llvm_type(arg_type), str(arg_ir_register))
+
+                    if arg_type == Type.VOID:
+                        err("ERROR: void expression passed as parameter " + str(i) + " of function '" + name + "' in line " + str(token.line) + " and column " + str(token.column) + "\n")
+                        exit(-1)
+                    elif arg_type == Type.FLOAT and args[i] == Type.INT:
+                        err("WARNING: possible loss of information converting float expression to int expression in parameter " + str(i) + " of function '" + name + "' in line " + str(token.line) + " and column " + str(token.column) + "\n")
 
         printf(")\n")
         # if llvm_type(tyype) == "void":
