@@ -310,6 +310,12 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
                 elif cte_value != None:
                     if text == '-':
                         cte_value = -cte_value
+                else:
+                    self_ir_register_before_operation = ir_register
+                    ir_register = self.next_ir_register
+                    self.next_ir_register += 1
+                    printf("  %%%s = sub nsw %s %s, %%%s\n", ir_register, llvm_type(tyype), 0, self_ir_register_before_operation)
+                    cte_value = None
 
             else: # parentheses
                 tyype, cte_value, ir_register = self.visit(ctx.expression(0))
