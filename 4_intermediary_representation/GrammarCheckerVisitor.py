@@ -217,6 +217,15 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
                 elif op == '--':
                     cte_value -= 1
             else:
+                ir_register_before_operation = ir_register
+                ir_register = self.next_ir_register
+                self.next_ir_register += 1
+                if op == '++':
+                    printf("  %%%s = add nsw %s %%%s, %s\n", ir_register, llvm_type(tyype), ir_register_before_operation, 1)
+                elif op == '--':
+                    printf("  %%%s = sub nsw %s %%%s, %s\n", ir_register, llvm_type(tyype), ir_register_before_operation, -1)
+                else:
+                    print("We have a bug on operations ++ and --")
                 cte_value = None
         else:
             expr_type, expr_cte_value, expr_ir_register = self.visit(ctx.expression())
@@ -237,6 +246,19 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
                     cte_value *= expr_cte_value
                 elif op == '/=':
                     cte_value /= expr_cte_value
+            else:
+                ir_register_before_operation = ir_register
+                ir_register = self.next_ir_register
+                self.next_ir_register += 1
+                if op == '*=':
+                    printf("  %%%s = mul nsw %s %%%s, %%%s\n", ir_register, llvm_type(tyype), ir_register_before_operation, ir_register - 1) #doubt verificar esse ultimo argumento se ta pegando certo
+                elif op == '/=':
+                    printf("  %%%s = sdiv nsw %s %%%s, %%%s\n", ir_register, llvm_type(tyype), ir_register_before_operation, ir_register - 1)
+                elif op == '+=':
+                    printf("  %%%s = add nsw %s %%%s, %%%s\n", ir_register, llvm_type(tyype), ir_register_before_operation, ir_register - 1)
+                elif op == '-=':
+                    printf("  %%%s = sub nsw %s %%%s, %%%s\n", ir_register, llvm_type(tyype), ir_register_before_operation, ir_register - 1)
+                cte_value = None
 
         if ctx.identifier() != None:
             self.ids_defined[name] = tyype, -1, cte_value, ir_register
