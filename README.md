@@ -16,3 +16,4 @@ Instructions to run each part of the project are contained on their respective f
 All the rest was made by me with love and despair. Sometimes one, sometimes another, and sometimes both. Sometimes [rage](https://64.media.tumblr.com/40d51c3c0828530a5c8266c100652a52/tumblr_p7uek3YwiY1xrqgt2o1_400.gif) took a part in the play as well.
 
 Hope this helps someone, someday.
+(But at the same time, I wish that no one ever has to go through this suffering.)
