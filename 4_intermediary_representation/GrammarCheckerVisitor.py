@@ -76,9 +76,9 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
         if ctx.RETURN() != None:
             token = ctx.RETURN().getPayload()
             tyype, cte_value, ir_register = self.visit(ctx.expression())
-            #print("ir_reg::" + str(ir_register))
+            #print("  (tyype::cte_value::ir_register) ->  ({}::{}::%{})".format(str(tyype), str(cte_value), str(ir_register)))
             #print("ids_defined:: " + str(self.ids_defined))
-            function_type, params, cte_value_WHAT_THE_F_CK_THIS_IS_DOING_HERE, ir_register_WHAT_THE_F_CK_THIS_IS_DOING_HERE = self.ids_defined[self.inside_what_function]
+            function_type, params, function_cte_value, function_ir_register = self.ids_defined[self.inside_what_function]
 
             #print(self.ids_defined[self.inside_what_function])
             if cte_value is None:
