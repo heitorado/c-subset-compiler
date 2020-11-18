@@ -76,11 +76,8 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
         if ctx.RETURN() != None:
             token = ctx.RETURN().getPayload()
             tyype, cte_value, ir_register = self.visit(ctx.expression())
-            #print("  (tyype::cte_value::ir_register) ->  ({}::{}::%{})".format(str(tyype), str(cte_value), str(ir_register)))
-            #print("ids_defined:: " + str(self.ids_defined))
             function_type, params, function_cte_value, function_ir_register = self.ids_defined[self.inside_what_function]
 
-            #print(self.ids_defined[self.inside_what_function])
             if cte_value is None:
               printf("  ret %s %%%s\n", llvm_type(tyype), str(ir_register))
             else:
@@ -134,7 +131,6 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
     def visitVariable_definition(self, ctx:GrammarParser.Variable_definitionContext):
         tyype = ctx.tyype().getText()
         ir_register = None
-
         # identifiers
         for i in range(len(ctx.identifier())):
             name = ctx.identifier(i).getText()
@@ -258,6 +254,8 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
                     printf("  %%%s = add nsw %s %%%s, %%%s\n", ir_register, llvm_type(tyype), ir_register_before_operation, ir_register - 1)
                 elif op == '-=':
                     printf("  %%%s = sub nsw %s %%%s, %%%s\n", ir_register, llvm_type(tyype), ir_register_before_operation, ir_register - 1)
+                elif op == '=':
+                  ir_register = expr_ir_register
                 cte_value = None
 
         if ctx.identifier() != None:
@@ -417,9 +415,6 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
                             cte_value = 0
                 else:
                     cte_value = None
-
-        #err(tyype + ": " + str(cte_value) + ", " + str(ir_register) + "\n")
-        #print("{} {} {}".format(tyype, cte_value, ir_register))
         return tyype, cte_value, ir_register
 
 
@@ -450,7 +445,7 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
     def visitFunction_call(self, ctx:GrammarParser.Function_callContext):
         name = ctx.identifier().getText()
         token = ctx.identifier().IDENTIFIER().getPayload()
-      
+
         try:
             tyype, args, cte_value, ir_register = self.ids_defined[name]
             if len(args) != len(ctx.expression()):
@@ -467,11 +462,10 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
             for i in range(len(ctx.expression())):
 
                 arg_type, arg_cte_value, arg_ir_register = self.visit(ctx.expression(i)) #Visita argumentos primeiro
-                
-                ir_register = self.next_ir_register #DEPOIS -> PRINTA FUNCAO APOS VISTAR OS ARGUMENTOS
-                self.next_ir_register += 1
 
-                if(i == 0): #so quero imprimir aassinatura para todos os argumentos 1 vez, a primeira
+                if(i == 0):
+                    ir_register = self.next_ir_register
+                    self.next_ir_register += 1
                     printf("  %%%s = call %s @%s(", str(ir_register), llvm_type(tyype), name)
 
                 if i < len(args):
@@ -494,15 +488,6 @@ class GrammarCheckerVisitor(ParseTreeVisitor):
                         err("WARNING: possible loss of information converting float expression to int expression in parameter " + str(i) + " of function '" + name + "' in line " + str(token.line) + " and column " + str(token.column) + "\n")
 
         printf(")\n")
-        # if llvm_type(tyype) == "void":
-        #   if args == []:
-        #     f_args = ''
-        #   printf("  call void @%s(%s)\n", name, f_args)
-        # else:
-        #   ir_register = self.next_ir_register
-        #   self.next_ir_register += 1
-        #   printf("  %%%s = call %s @%s(%s)\n", str(ir_register), llvm_type(tyype), name, args)
-
         return tyype, cte_value, ir_register
 
 
